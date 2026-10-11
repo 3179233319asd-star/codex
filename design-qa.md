@@ -1,45 +1,53 @@
-# Reference black-hole QA
+# Cinematic gas material QA
 
-Date: 2026-10-11. The latest user direction restores the original reference, replacing the earlier request for upper/lower symmetry. The scene must remain code-generated and animated, with the accepted personal-site UI occupying one screen.
+Date: 2026-10-11. The user requests a more striking, code-generated animated black hole, retaining the original reference perspective and accepted single-screen personal-site UI. Source: `docs/reference.jpg`, 1280 × 720. Before: reference v17 at commit `23c20fb`; its historical checks are archived in `docs/reference-restoration-qa.md`. Final visual candidate: cinematic v22.
 
-## Evidence and comparison state
+## Actual evidence
 
-Source: `docs/reference.jpg`, 1280 × 720. Final candidate: reference v17. The rejected symmetric result is archived in `docs/symmetry-experiment-qa.md` and immutable `test-results/blackhole-symmetric-gas-v4-*` captures.
+Comparison captures use real Chromium WebGL 2 with SwiftShader, DPR 1, at 1280 × 720, 390 × 844 and 844 × 390. Reduced motion freezes comparison frames at time 0 and quality 1. Running animation is checked separately. All three captures have exact one-screen document bounds and zero console, page or HTTP errors. All five shader-time frames and both phone hot-phase resolution captures passed. Continuous application-clock and control verification also passed. Actual running captures, including adaptive mobile quality, were inspected with no remaining P1/P2 blockers.
 
-- Final actual WebGL screenshots: `test-results/blackhole-latest-desktop.png`, `blackhole-latest-mobile.png`, `blackhole-latest-landscape.png` and corresponding `*-scene.png` files.
-- Full source/current pair: `blackhole-latest-reference-comparison.jpg`.
-- Rejected symmetry/current pair: `blackhole-latest-before-after.jpg`.
-- Focused source/current junctions: `blackhole-latest-junctions.jpg`. Identical 260 × 170 source crops at `(300,215)` and `(720,215)` are enlarged equally to 520 × 340.
-- Phone source/current pair: `blackhole-latest-mobile-comparison.jpg`. The source is scaled to the same 844-pixel height and cropped centrally to 390 pixels, matching the scene's height-based projection.
-- Immutable final captures and metadata: `blackhole-reference-v17-*`; current metadata alias: `blackhole-latest-capture.json`.
+- Actual UI and immersive captures: `test-results/blackhole-cinematic-v22-{desktop,mobile,landscape}.png` and corresponding `*-scene.png`; metadata: `blackhole-cinematic-v22-capture.json`.
+- Source/current full pair: `blackhole-cinematic-v22-reference-comparison.jpg`.
+- Genuine before/current pair: `blackhole-cinematic-v22-before-after.jpg`; before is the same-size, same-state `blackhole-cinematic-before-desktop-scene.png`.
+- Source/current shoulder crops: `blackhole-cinematic-v22-junctions.jpg`. Identical 260 × 170 crops at `(300,215)` and `(720,215)` are enlarged equally to 520 × 340.
+- Phone source/current pair: `blackhole-cinematic-v22-mobile-comparison.jpg`. Source is scaled to the same 844-pixel height and cropped centrally to 390 pixels, matching the scene's height-based framing.
+- Five shader-time frames: `test-results/blackhole-cinematic-v22-motion-{0,0.8,3,8,30}.png` and `blackhole-cinematic-v22-motion.json`; the original capture directory is `test-results/v22-motion/`.
+- Phone hot-phase captures at shader time 0.8: `blackhole-cinematic-v22-phone-hot-{dpr1,dpr08}.png`, corresponding `*-scene.png`, and `blackhole-cinematic-v22-phone-hot-report.json`. DPR 0.8 is a resolution proxy, not an adaptive-quality or physical mobile GPU test.
+- Continuous application-clock and control evidence: `blackhole-cinematic-v22-render-report.json` and `blackhole-cinematic-v22-live-{desktop,immersive,mobile}.png`. The current test output remains `render-report.json` and `blackhole-live-*`.
 
-Chromium opened `http://terminal.local:4173/` using real WebGL 2 with SwiftShader. Viewports and screenshot pixels are 1280 × 720, 390 × 844 and 844 × 390, DPR 1. Reduced motion freezes time at 0 with quality 1 for visual comparison. Animation is tested separately. Each viewport has exact one-screen document dimensions, with zero console, page or resource errors.
+Screenshot files and the source reference are QA evidence; none are imported by the running website. Convenience aliases `blackhole-latest-*` now point to this final candidate. The source full pair, genuine before/after, shoulder crops, phone pair and all three UI sizes were inspected alongside the temporal and running evidence.
 
-## Findings
+## Findings and corrections
 
-- P1, fixed: screen-centred mirrored gas replaced the reference's tilted disc and foreground occlusion. Signed, independently traced rays now restore the raised circle centre, slightly lower main bright band and dark near-disc layer crossing the lower image. The underside is not a reflected copy of the upper arch.
-- P2, fixed: thick roots and folded projection created abrupt joins, double plates and dark triangular gaps. A monotonic concave mapping opens only the rear material; the front disc and photon silhouette retain their original projection. Both junctions turn continuously into the plane without large black wedges.
-- P2, fixed: fine material became a dense point grid or woven pattern in the grazing projection. Position and velocity differentials travel through the same curved rays. Their radial footprint filters unresolved noise and orbital streams while retaining resolved, independently lit filaments. This replaces a fixed texture-footprint estimate that either retained aliasing or washed the disc into a uniform milky sheet.
-- P2, fixed: cold coarse brush marks dominated the gas. Separate optical-depth strata, interrupted orbital streams, sparse hot arcs and faint warm scattering give soft depth with identifiable fine flows and dark gaps. Independent review of the full pair, focused junctions, phone comparison and landscape found no remaining P1/P2 visual blockers. The phone also avoids thick white roots, dominant woven grids and uniform textureless gas sheets.
+- P2, fixed: beige emission was spread too evenly through the gas. Continuous advected density, cold scattering, correlated dust absorption and thin optical-depth strata now preserve dark openings. The sky and photon rim retain their own exposure.
+- P2, fixed: early candidates emphasized dense parallel contour lines. The material combines continuous two-dimensional gas with subordinate interrupted wisps and sparse streams; oversized manually drawn hot circles were removed.
+- P2, fixed: increasing angular texture frequency while filtering only radius reintroduced woven detail. Signed radial and angular ray differentials now include the differential-rotation Jacobian for the main Cartesian gas field. A low radial-frequency density envelope retains resolved angular cloud openings when small details are integrated away. The extended photosphere uses one Cartesian density field, with screen derivatives evaluated before divergent ray integration.
+- P2, fixed: distant sky lacked faint depth. Broken procedural remote dust adds subordinate cloud structure while preserving dark sky gaps and individual stars.
+- P2, fixed in the dynamic hot phase: static candidates passed while the actual 0.8-second phase formed a wide white pipe. Bounded bloom removed hard clipping; removing a whole-gas highlight multiplier and adding a gas-only HDR shoulder reduced saturation, but visual inspection still found a broad, flat hot body. A source-component diagnostic isolated the continuum: removing body emission opened the thin streams. The final material reduces body gain from 3.6 to 1.4 in the hottest gas and thermal diffusion from .24 to .10, retaining density, opacity, cold wings, stream gains and geometry. Actual final 0.8-second inspection now shows distinct bright streams and dark channels rather than a white or grey pipe. All five actual shader-time images and both phone hot-phase images were inspected; the broad flat tube did not recur.
+- The accepted circular silhouette, tilted disc, dark foreground veil and natural concave rear shoulders are retained. The lower image follows its own ray path and occlusion; it is not a reflected upper image. No home sections, copy, type or controls were redesigned.
 
-Remaining P3: the main hot band is softer and more uniform than the reference, gas is somewhat warmer, and individual lower-ring flows differ. The reference has more intricate cold-silver strands and dark layers. These are visible fine-detail differences; exact photographic or pixel-identical reproduction is not claimed. The reference raster is used only for QA and is not imported by the running site.
+Remaining P3: the reference thermal bands are warmer, denser and locally brighter; the final normal phase is cooler, thinner and darker. Long shoulder filaments remain smoother than the source, the near-side bright band is more continuous, and 30-second foreground arcs are somewhat regular. DPR 0.8 softens fine strands further. The original subordinate wisps retain an unwrapped angular-noise coordinate, so strict periodicity is not claimed for every detail field; the main cloud and Cartesian gas use periodic orbit coordinates, and actual inspected frames show no visible seam. Fine flow patterns remain different, especially in the phone crop. Exact photographic or pixel-identical reproduction is not claimed. Numerical saturated-band checks alone do not establish visual success.
+
+Diagnostic measurements use a weighted sRGB brightness proxy, not physical radiance. In fixed time-0 ROIs, upper-hot mean is .592 before → .438 now (source .595), and lower-hot mean .610 → .465 (source .595). Left-wing mean is .336 → .394 (source .484), and deep-sky mean .0008 → .0071 (source .0104). Thus this change enriches the outer scene while accepting dimmer normal-phase hot gas to preserve dynamic stream detail; it does not improve every source brightness metric. Full definitions and measurements: `test-results/blackhole-cinematic-v22-metrics.json`.
 
 ## Required visual surfaces
 
-1. Fonts and typography: the accepted native rounded/system typography and local Noto Sans SC remain readable. Existing heading sizes, weights, wrapping and controls are retained.
-2. Spacing and layout: the same header, welcome copy and bottom capsule remain within one screen on desktop, phone and landscape. The phone crops the scene horizontally while preserving its height-based proportions.
-3. Colors and tokens: ivory/silver emission, subordinate cool haze and almost-black sky remain consistent with the existing interface. The shadow remains dark and the lower foreground veil remains visible.
-4. Image quality: real WebGL supplies curved rays, optical-depth disc crossings, drifting gas, procedural stars and galaxies without photos, videos or image textures. The Canvas fallback preserves the inclined structure with simpler curved filaments; its visual detail is deliberately lower than WebGL.
-5. Copy and content: the same concise Chinese welcome, personal navigation and reading dialogs remain in place. No extra home sections or decorative labels were added.
+1. Fonts and typography: native rounded/system fonts and locally bundled Noto Sans SC remain readable at all three sizes; actual heading wrapping and control labels were inspected.
+2. Spacing and layout: header, welcome copy and bottom capsule fit within one screen at all three sizes; phone framing crops the wings while preserving scene height. Actual screenshots and document bounds agree.
+3. Colors and tokens: hot peaks, cool gas, subordinate warm dust, dark sky and black core remain visually distinct. Full comparisons, temporal frames and phone hot phases were inspected.
+4. Image quality: actual procedural gas, stars, galaxies and joins were compared against the source using full pairs, equally scaled shoulder crops, phone comparison and the animated hot phase. No thick feet, folds, grids or broad flat hot tube remain at inspected states; fine texture differences remain P3.
+5. Copy and content: concise Chinese welcome, personal navigation and control text were inspected in screenshots. Source diff confirms reading dialogs and project content are unchanged; their prior functional checks are historical evidence.
 
 ## Verification
 
-- `npm run build` passed on the final v17 shader.
-- Final WebGL static captures passed at all three sizes, with zero errors and exact one-screen bounds.
-- Final `node tests/render-smoke.mjs` passed all 9 checks: visible WebGL pixels and no GL errors, time/pixel changes, frozen pause, actual UI speed/light controls and labels, identical brightness restoration, reset/resume, immersive view and exact mobile bounds. At frozen time, intensity 0.7 changed the frame hash; restoring 1 returned the original hash `1179149446`. Results: `test-results/render-report.json` and immutable `blackhole-reference-v17-render-report.json`; live evidence: `blackhole-live-desktop.png`, `blackhole-live-immersive.png`, `blackhole-live-mobile.png`.
-- Unchanged final Canvas fallback passed 16 browser checks across desktop and phone: visible pixels, animation, frozen pause, speed/light controls and labels, identical restored brightness, default reset/resume, immersive mode/Escape and exact one-screen bounds. Results: `test-results/reference-fallback-report.json`; screenshots: `reference-fallback-desktop.png`, `reference-fallback-mobile.png` and their scene captures.
-- Earlier dialog/keyboard checks remain historical evidence in `docs/one-screen-ui-qa.md` and `docs/material-refinement-qa.md`, rather than being counted as rerun here.
+- `npm run build` passed on the final v22 shader.
+- Final static captures passed at 1280 × 720, 390 × 844 and 844 × 390.
+- Final five-time shader test passed: five different full-frame and screenshot hashes, black core ROI fixed and dark, zero browser/WebGL/resource errors, and saturated-band median/P90 0 pixels at all five selected times. Actual inspection separately passed.
+- Final phone hot-phase captures passed with actual 390 × 844 and 312 × 675 framebuffers. The latter is explicitly a DPR resolution proxy; both were visually inspected with no P1/P2.
+- `node tests/render-smoke.mjs` passed all nine checks. Actual application time advanced .2 → .3 seconds and rendered pixels changed. Pause froze time and pixels; speed 1.4 and intensity .7 updated real controls/labels; restoring intensity restored the exact paused hash `-1218918956`. Reset resumed default playback, immersive mode/Escape worked, and the final phone occupied exactly 390 × 844 CSS pixels. Its actual adaptive quality was .8, with a 312 × 675 WebGL framebuffer at application time .944 seconds. New final desktop, immersive and phone captures were inspected with no P1/P2.
+- The shader-time regression guard measures the longest vertical run above weighted sRGB 0.95 per column in `(585,123)–(695,181)`; median must remain at most 8 pixels. The bad candidate had a median 17 pixels, versus roughly 3 pixels in the source. This catches broad saturation; it does not replace visual review of pale unsaturated bands or gas texture.
+- Canvas fallback and UI implementation are unchanged. Their earlier 16 fallback checks and dialog/keyboard checks remain historical evidence in the archived reference and UI QA documents; they are not counted as rerun for this shader change.
 
-Each traced path uses at most 180 integration steps. The local rear-disc shoulder region traces an additional path, and differential transport adds arithmetic and register use; hardware frame rates have not been measured. The projection model, crossing derivatives and caustic footprint cap are approximations for visual rendering.
+Each ray path uses at most 180 integration steps; rear shoulder regions also trace a local rear path. The optical model, fixed-step differential transport, crossing correction, footprint caps and photosphere approximation serve visual rendering. Hardware frame rates have not been measured. The running renderer retains adaptive quality; fixed-quality screenshots do not establish hardware performance.
 
 final result: passed

@@ -101,10 +101,15 @@ vec3 background(vec3 direction) {
   col += brightStar(sky,vec2(.255,-.488),vec3(.84,.90,1.0),5.3)*.66;
   float centerline = sky.y+.23-sky.x*.53+(fbm(sky*7.0+9.0)-.5)*.10;
   float milky = exp(-pow(centerline/.10,2.0))*cloudBreaks;
-  col += vec3(.18,.26,.36)*pow(cloud,3.0)*dust*milky*.68;
+  col += vec3(.18,.26,.36)*pow(cloud,3.0)*dust*milky*1.10;
   float mist = max(fbm(sky*6.2+vec2(9.2,17.1))*fbm(sky*37.0)-.19,0.0);
-  col += vec3(.17,.23,.31)*mist*milky*.72;
-  col += vec3(.10,.15,.21)*pow(max(cloud-.38,0.0)*1.6,3.0)*dust*.32;
+  col += vec3(.17,.23,.31)*mist*milky*1.10;
+  col += vec3(.10,.15,.21)*pow(max(cloud-.38,0.0)*1.6,3.0)*dust*.80;
+  // Broken distant dust stays below the bright stars, with dark holes between
+  // clouds. There is no uniform raised black floor around the silhouette.
+  float remoteDust = pow(max(fbm(sky*5.7+13.3)-.34,0.0)*1.7,2.0)
+                   *smoothstep(.24,.66,fbm(sky*18.0+31.7));
+  col += vec3(.055,.080,.120)*remoteDust*1.1;
   col += galaxy(sky,vec2(.49,-.39),-.78,vec2(.055,.012),14.3)*1.55;
   col += galaxy(sky,vec2(.28,.23),-.64,vec2(.031,.009),52.1)*1.08;
   return col;
@@ -137,14 +142,19 @@ float orbitalFilament(float radius, float theta, float frequency, float seed, fl
     if (abs(neighbour)>1 && footprint<1.2) continue;
     float lane = centralLane+float(neighbour);
     float center = .18+.64*hash(vec2(lane,seed));
-    float width = .065+.060*hash(vec2(lane+13.7,seed+4.3));
+    float phase = hash(vec2(lane+39.7,seed+91.1))*2.0*PI;
+    float width = (.035+.145*hash(vec2(lane+13.7,seed+4.3)))
+                 *(.80+.20*sin(theta*2.0+phase));
     float filteredWidth = sqrt(width*width+footprint*footprint/6.0);
-    float distance = coordinate-lane-center;
+    float turn = 2.0+floor(hash(vec2(lane+5.3,seed+11.9))*4.0);
+    float bend = .12*sin(theta*turn+phase+radius*.13)
+               +.07*sin(theta*(turn+3.0)-phase*1.9-radius*.20);
+    float distance = coordinate-lane-center-bend;
     float core = exp(-pow(distance/filteredWidth,2.0))*width/filteredWidth;
     vec2 densityOffset = hash2(vec2(lane,seed+17.9))*43.0;
     float density = noise(orbit+densityOffset);
     // Most gas strands remain dim; isolated hot streams carry the highlights.
-    float brightness = .12+4.0*pow(hash(vec2(lane+73.1,seed+31.7)),4.0);
+    float brightness = .02+6.0*pow(hash(vec2(lane+73.1,seed+31.7)),6.0);
     light += core*smoothstep(.22,.73,density)*brightness;
   }
   return mix(light,.083,smoothstep(1.3,2.6,footprint));
@@ -180,16 +190,16 @@ vec3 scatteredGas(vec2 uv) {
   float inner = smoothstep(.198,.213,r);
   float outer = 1.0-smoothstep(.37,.46,r);
   float hotRadius = mix(.270,.241,lower);
-  float hot = exp(-pow((r-hotRadius)/mix(.041,.047,lower),2.0));
+  float hot = exp(-pow((r-hotRadius)/mix(.030,.034,lower),2.0));
   float haze = exp(-pow((r-mix(.332,.336,lower))/.073,2.0));
   float foreground = mix(1.0,smoothstep(.12,.195,-uv.y),lower);
-  vec3 warm = vec3(1.0,.94,.86);
+  vec3 warm = vec3(1.0,.975,.935);
   vec3 silver = vec3(.45,.51,.60);
-  vec3 light = warm*hot*mix(.60,1.10,lower)+silver*haze*mix(.24,.46,lower);
+  vec3 light = warm*hot*mix(.95,1.55,lower)+silver*haze*mix(.24,.46,lower);
   float knots = pow(noise(vec2(r*431.0,angle*89.0-time*.14)),15.0);
   light *= threads;
   light += vec3(1.0,.85,.65)*knots*haze*.45;
-  float innerHaze = exp(-pow((r-.228)/.026,2.0))*.52;
+  float innerHaze = exp(-pow((r-.228)/.026,2.0))*.28;
   light += warm*innerHaze*(.5+strand*.8);
   // A few independent, interrupted filaments cross the faint inner sheath.
   // Unequal radii, slowly drifting bends and long gaps avoid regular wire rings.
@@ -239,68 +249,163 @@ vec3 discAtmosphere(vec2 uv) {
   return light;
 }
 
+// Resolved extinction in the dilute photosphere adds fine, drifting openings
+// after the dense disc has been integrated along a ray. A single Cartesian
+// density field avoids rows of knots at polar coordinate intersections.
+float photosphereTransmission(vec2 uv) {
+  float radius = length(uv);
+  float phase = (time+24.0)*.10/pow(max(radius,.22)/.27,.7);
+  vec2 flow = vec2(cos(phase)*uv.x+sin(phase)*uv.y,
+                  -sin(phase)*uv.x+cos(phase)*uv.y);
+  vec2 displacement = vec2(noise(flow*19.0+17.3),
+                            noise(flow*23.0+41.7))-.5;
+  vec2 gasPosition = flow*145.0+displacement*3.5;
+  float footprint = length(dFdx(gasPosition))+length(dFdy(gasPosition));
+  float gas = filteredFbm(gasPosition,footprint);
+  float ringMask = smoothstep(.208,.232,radius)
+                 *(1.0-smoothstep(.37,.48,radius))
+                 *smoothstep(.07,.17,abs(uv.y));
+  float planeMask = exp(-pow(uv.y/.105,4.0))
+                  *smoothstep(.22,.36,abs(uv.x));
+  float density = smoothstep(.20,.80,gas);
+  float dust = smoothstep(.40,.70,1.0-density);
+  float transmission = (.28+1.80*pow(density,1.35))*exp(-dust*.35);
+  return mix(1.0,transmission,clamp(ringMask+planeMask,0.0,1.0)*.24);
+}
+
 // The disc is shaded in its own orbital coordinates, not screen-space rings.
 // Differential angular speed and several noise scales create shearing gas.
-vec4 disc(vec3 p, vec3 velocity, float layer, float textureScale) {
+vec4 disc(vec3 p, vec3 velocity, float layer, vec4 rayDifferentials) {
   float r = length(p.xz);
   if (r<2.15 || r>16.0) return vec4(0);
-  float a = atan(p.z,p.x);
-  float orbital = time*1.45/pow(r,.9);
-  float theta = a-orbital;
-  // True radial ray differentials supplied by the plane intersection. Their
-  // unit is world radius per height-normalized screen coordinate, so existing
-  // filters divide by resolution.y to obtain the radial pixel footprint.
-  vec2 seed = vec2(layer*17.31,layer*9.73);
-  vec2 flow = vec2(r*1.7,theta*4.0+r*.65)+seed;
-  float macro = filteredFbm(flow,1.7*textureScale/resolution.y);
-  float warp = fbm(vec2(r*.95,theta*3.2-r*.24)+seed);
-  float warpedRadius = r + (warp-.5)*.16;
-  // Narrow ridges follow long orbital arcs. Independent scales cross and
-  // fragment instead of filling the disc with a broad, foamy bright noise.
-  float strands = noise(vec2(warpedRadius*11.3,theta*1.7+r*.14)+seed);
-  float turbulentBody = filteredFbm(vec2(warpedRadius*6.8,theta*5.0+r*.40)+seed,
-                                    6.8*textureScale/resolution.y);
-  float thread = noise(vec2(warpedRadius*22.0,theta*4.7+r*.35)+seed);
-  float fine = noise(vec2(warpedRadius*34.0,theta*9.0+r*.73)+seed);
-  float body = pow(clamp(turbulentBody*1.7-.30,0.0,1.0),2.0);
-  float filament = pow(max(1.0-abs(strands*2.0-1.0),0.0),5.0);
-  float threadRidge = pow(max(1.0-abs(thread*2.0-1.0),0.0),8.0);
-  float fineRidge = pow(max(1.0-abs(fine*2.0-1.0),0.0),10.0);
-  body = filteredRidge(body,.349,6.8,textureScale);
-  filament = filteredRidge(filament,.256,11.3,textureScale);
-  threadRidge = filteredRidge(threadRidge,.175,22.0,textureScale);
-  fineRidge = filteredRidge(fineRidge,.144,34.0,textureScale);
-  float longStrand = orbitalFilament(warpedRadius,theta,7.3,layer*37.1+3.9,textureScale);
-  float secondStrand = orbitalFilament(warpedRadius,theta,11.7,layer*31.7+21.4,textureScale);
-  float fineStrand = orbitalFilament(warpedRadius,theta,19.3,layer*47.3+51.8,textureScale);
-  float clumps = .25+macro*.85;
-  // Faint plunging matter softens the sharp ISCO cut into trailing wisps.
+
+  float angle = atan(p.z,p.x);
+  float orbitalRate = 1.45/pow(r,.9);
+  float theta = angle-time*orbitalRate;
+  vec2 orbit = vec2(cos(theta),sin(theta));
+  vec2 radialDifferential = rayDifferentials.xy/resolution.y;
+  vec2 angularDifferential = rayDifferentials.zw/resolution.y
+                           +time*.9*orbitalRate/r*radialDifferential;
+  float textureScale = abs(rayDifferentials.x)+abs(rayDifferentials.y);
+  float footprint = textureScale/resolution.y;
+  vec2 tangent = vec2(-orbit.y,orbit.x);
+  vec2 flowDX = orbit*radialDifferential.x+r*tangent*angularDifferential.x;
+  vec2 flowDY = orbit*radialDifferential.y+r*tangent*angularDifferential.y;
+  float flowFootprint = length(flowDX)+length(flowDY);
+  // This derivative increases with elapsed differential rotation; motion is
+  // advection of material, not an unrelated noise seed changed each frame.
+  float shear = 1.0+min(time*.9*orbitalRate/max(r,2.15),2.0);
+  float depth = abs(layer);
+
+  // Low radial frequency keeps large clouds RESOLVED in the grazing image.
+  // A periodic orbit domain prevents a seam where atan wraps. All strata see
+  // the same large cloud; their heights only add small depth displacements.
+  vec2 cloudPosition = orbit*3.2+vec2(r*.07,r*.04)+vec2(5.1,9.3);
+  float cloudFootprint = .10*footprint
+                        +3.2*(abs(angularDifferential.x)+abs(angularDifferential.y));
+  float cloud = filteredFbm(cloudPosition+layer*vec2(.055,-.035),
+                            cloudFootprint);
+  float density = smoothstep(.25,.72,cloud);
+  float depthCloud = noise(cloudPosition*1.27+vec2(layer*.10,8.7));
+
+  // Coherent shearing bends, shared between layers, give long strands a
+  // changing local separation. The outer strata drift by a fraction of one
+  // lane instead of becoming unrelated overlaid noise sheets.
+  vec2 bendPosition = orbit*(2.1+r*.09)+vec2(r*.83,15.7);
+  float bend = filteredFbm(bendPosition+layer*vec2(.09,.06),
+                           .96*footprint*shear);
+  float warpedRadius = r+(bend-.5)*.21+layer*(depthCloud-.5)*.035;
+  float strandTheta = theta+(cloud-.5)*.055+layer*.014;
+
+  float primary = orbitalFilament(warpedRadius,strandTheta,7.3,
+                                  3.9+layer*19.7,textureScale);
+
+  // Continuous gas carries most of the light. A gently curled two-dimensional
+  // field gives the clouds changing widths and openings, rather than relying
+  // on a stack of one-dimensional bright contour lines.
+  vec2 flowPosition = orbit*warpedRadius;
+  vec2 curl = vec2(noise(flowPosition*.37+17.3),
+                   noise(flowPosition*.43+41.7))-.5;
+  vec2 gasPosition = flowPosition*2.20+curl*.85+layer*vec2(.04,.07);
+  float plume = filteredFbm(gasPosition,2.20*flowFootprint*1.30);
+  vec2 finePosition = mat2(.80,.60,-.60,.80)*gasPosition*2.15+vec2(19.7,8.3);
+  float finePlume = filteredFbm(finePosition,4.730*flowFootprint*1.30);
+  float gasDensity = smoothstep(.23,.77,plume*.72+finePlume*.28);
+
+  // Anisotropic ridges add interrupted wisps between the long streams. The
+  // angular coordinates are periodic and vary much slower than radius.
+  vec2 fineSeed = vec2(layer*.13,layer*.21);
+  float filamentNoise = noise(vec2(warpedRadius*12.4+orbit.x*.65,
+                                  orbit.y*2.2+r*.12)+fineSeed);
+  float microNoise = noise(vec2(warpedRadius*27.0+orbit.y*.9,
+                               orbit.x*3.4+r*.25)+fineSeed*1.7);
+  float filament = pow(max(1.0-abs(filamentNoise*2.0-1.0),0.0),6.0);
+  float micro = pow(max(1.0-abs(microNoise*2.0-1.0),0.0),9.0);
+  filament = filteredRidge(filament,.222,12.4,textureScale);
+  micro = filteredRidge(micro,.158,27.0,textureScale);
+
+  // Retain the established physical support and projection-dependent fading.
   float edge = smoothstep(2.15,2.94,r);
   float nearSide = smoothstep(-1.0,4.0,p.z);
-  float outside = exp(-pow(max(r-mix(7.2,6.0,nearSide),0.0)/mix(3.5,2.7,nearSide),2.0));
+  float outside = exp(-pow(max(r-mix(7.2,6.0,nearSide),0.0)
+                          /mix(3.5,2.7,nearSide),2.0));
   float radial = pow(3.3/max(r,3.3),mix(1.5,2.25,nearSide));
-  float heat = exp(-pow((r-3.65)/1.5,2.0));
-  vec3 cool = vec3(.43,.50,.60);
-  vec3 warm = vec3(1.0,.94,.84);
-  vec3 gas = mix(cool,warm,clamp(radial*.76+heat*.18+filament*.35,0.0,1.0));
-  // The approaching side is modestly brighter and hotter; no neon colors.
+  float heat = exp(-pow((r-3.65)/1.05,2.0));
   float doppler = pow(clamp(1.0-.10*p.x/r,.8,1.2),2.2);
   float grazing = clamp(.26/(abs(normalize(velocity).y)+.055),.8,1.72);
-  float breaks = .60+.40*smoothstep(.16,.72,macro);
-  float detail = (.050+body*.65+longStrand*.50+secondStrand*.35+fineStrand*.20
-                 +filament*.55+threadRidge*.42+fineRidge*.18)*clumps*breaks;
-  float light = edge*outside*radial*detail*doppler*grazing;
-  vec3 emission = gas*light*5.2;
-  emission += warm*heat*edge*(.08+.26*macro+.10*longStrand)*doppler;
-  float sparks = pow(noise(vec2(r*43.0,theta*67.0+r*3.0)),16.0);
-  emission += vec3(1.0,.95,.87)*sparks*radial*outside*edge*1.5;
-  float opacity = edge*outside*clamp(.42+macro*.20+nearSide*.30+longStrand*.10,0.0,.97);
-  // The raised/lowered strata are cooler, thinner gas above the dense plane.
-  emission *= mix(1.0,1.12,abs(layer));
-  emission *= mix(vec3(1),vec3(.97,.98,1.02),abs(layer)*.55);
+  float support = edge*outside*radial*doppler*grazing;
+
+  // Unresolved fibres retain their energy but remain modulated by a resolved
+  // cloud. Their integrated mean therefore cannot become a uniform beige bar.
+  float streamCloud = .08+.92*density;
+  float streamModulation = .64+.72*depthCloud;
+  float hotStreams = (primary*.25+filament*.12+micro*.04)
+                    *streamCloud*streamModulation;
+  float wispFootprint = 6.8*footprint
+                       +5.0*(abs(angularDifferential.x)+abs(angularDifferential.y));
+  float wispDensity = filteredFbm(vec2(warpedRadius*6.8,theta*5.0+r*.40)
+                                  +layer*vec2(.17,.19),wispFootprint);
+  float wisps = pow(clamp(wispDensity*1.7-.30,0.0,1.0),2.0);
+  float body = (.018+wisps*.30+pow(gasDensity,2.1)*.65)*(.24+.76*density);
+  float shock = smoothstep(.39,.71,cloud+depthCloud*.08);
+
+  vec3 cool = vec3(.43,.46,.50);
+  vec3 neutral = vec3(.67,.69,.72);
+  vec3 bodyTint = mix(cool,neutral,clamp(radial*.27+heat*.13,0.0,.40));
+  bodyTint = mix(bodyTint,vec3(1.0,.985,.96),
+                 clamp(heat*.28+radial*.20,0.0,.65));
+  vec3 incandescent = mix(vec3(.57,.60,.65),vec3(1.0,.985,.96),
+                          clamp(heat*.42+radial*.70,0.0,1.0));
+  // The hot core is carried by sparse streams. Its continuum is weaker
+  // than the cooler cloud body, so dense orbital phases retain dark channels.
+  vec3 emission = bodyTint*body*support*mix(3.6,1.4,heat);
+  emission += incandescent*hotStreams*support*(6.0+heat*1.4);
+  // Gentle thermal diffusion belongs to hot, dense gas rather than the entire
+  // disc. Dark low-density interstices remain dark between luminous streams.
+  emission += incandescent*heat*edge*outside*density*shock*.10*doppler;
+
+  // Dust follows the same clouds and removes local light. Cooler strata carry
+  // slightly more dust, creating a true depth difference at the same location.
+  float dustShape = noise(cloudPosition*1.37+vec2(19.4,3.1));
+  float dust = density*smoothstep(.38,.76,dustShape)
+             *(1.0-.44*shock*heat);
+  float opticalDepth = edge*outside*dust*(.40+.58*nearSide)*(1.0+depth*.17);
+  vec3 localTransmission = exp(-opticalDepth*vec3(1.08,1.0,.91));
+  emission *= localTransmission;
+
+  float opacity = edge*outside*clamp(.20+density*.18
+                                     +gasDensity*.34
+                                     +nearSide*.28
+                                     +hotStreams*.055,0.0,.95);
+  opacity = 1.0-(1.0-opacity)*exp(-opticalDepth);
+  // The plane contains the hottest material; the thin raised gas scatters
+  // less light and is cooler, without obliterating the shared cloud gaps.
+  emission *= mix(1.0,.68,depth);
+  emission *= mix(vec3(1),vec3(.89,.96,1.03),depth*.50);
   emission *= 1.0-.24*smoothstep(6.0,14.0,r);
-  emission *= 1.0+.60*smoothstep(4.5,9.0,r);
-  return vec4(emission,opacity);
+  emission *= 1.0+1.60*smoothstep(4.5,9.0,r);
+  emission *= 3.0;
+  return vec4(emission,clamp(opacity,0.0,.97));
 }
 
 vec3 acceleration(vec3 p, float angularMomentum2) {
@@ -322,7 +427,7 @@ vec3 normalizedRayDifferential(vec3 velocity, float rawLength, vec3 rawDerivativ
 
 // Transported dp values describe equal affine times. Removing the crossing
 // time variation projects each differential onto the emitting stratum.
-float radialTextureScale(vec3 hit, vec3 hitVelocity, vec3 dpX, vec3 dpY) {
+vec4 discRayDifferentials(vec3 hit, vec3 hitVelocity, vec3 dpX, vec3 dpY) {
   float safeVy = hitVelocity.y >= 0.0 ? max(hitVelocity.y,.000001)
                                      : min(hitVelocity.y,-.000001);
   vec3 dHitX = dpX-hitVelocity*(dpX.y/safeVy);
@@ -330,11 +435,15 @@ float radialTextureScale(vec3 hit, vec3 hitVelocity, vec3 dpX, vec3 dpY) {
   vec2 radialDirection = hit.xz/max(length(hit.xz),.000001);
   float drX = dot(radialDirection,dHitX.xz);
   float drY = dot(radialDirection,dHitY.xz);
-  float scale = abs(drX)+abs(drY);
+  float radius2 = max(dot(hit.xz,hit.xz),.000001);
+  float daX = (hit.x*dHitX.z-hit.z*dHitX.x)/radius2;
+  float daY = (hit.x*dHitY.z-hit.z*dHitY.x)/radius2;
   // Caustics may amplify a ray differential past floating-point range. At
   // that point all existing high-frequency filters already tend to their mean.
-  if (isnan(scale) || isinf(scale)) return 280.0;
-  return clamp(scale,.0001,280.0);
+  vec4 differential = vec4(drX,drY,daX,daY);
+  if (any(isnan(differential)) || any(isinf(differential))) return vec4(140.0);
+  differential.xy *= min(1.0,280.0/max(abs(drX)+abs(drY),.0001));
+  return clamp(differential,vec4(-280.0),vec4(280.0));
 }
 
 // Trace just the far-side material for the locally opened rear image. The
@@ -384,8 +493,8 @@ vec3 rearDisc(vec2 projection, vec2 projectionDX, vec2 projectionDY,
           vec3 hitDpX = mix(oldDpX,dpX,fraction);
           vec3 hitDpY = mix(oldDpY,dpY,fraction);
           vec3 hitVelocity = mix(oldVelocity,velocity,fraction);
-          float textureScale = radialTextureScale(hit,hitVelocity,hitDpX,hitDpY);
-          vec4 matter = disc(hit,velocity,layer,textureScale);
+          vec4 rayDifferentials = discRayDifferentials(hit,hitVelocity,hitDpX,hitDpY);
+          vec4 matter = disc(hit,velocity,layer,rayDifferentials);
           float weight = stratum==1?.50:.25;
           float alpha = 1.0-pow(1.0-matter.a,weight);
           color += transmission*matter.rgb*alpha;
@@ -401,6 +510,8 @@ vec3 rearDisc(vec2 projection, vec2 projectionDX, vec2 projectionDY,
 void main() {
   vec2 uv = (gl_FragCoord.xy-.5*resolution)/resolution.y;
   uv.y -= .024;
+  // Evaluate screen derivatives before divergent ray integration.
+  float photosphere = photosphereTransmission(uv);
   // A diffuse outer photosphere makes the secondary image broader. Keep the
   // photon silhouette fixed while spreading only the outer gas projection.
   vec2 lensUV = uv;
@@ -482,8 +593,8 @@ void main() {
         vec3 hitDpX = mix(oldDpX,dpX,fraction);
         vec3 hitDpY = mix(oldDpY,dpY,fraction);
         vec3 hitVelocity = mix(oldVelocity,velocity,fraction);
-        float textureScale = radialTextureScale(hit,hitVelocity,hitDpX,hitDpY);
-        vec4 matter = disc(hit,velocity,layer,textureScale);
+        vec4 rayDifferentials = discRayDifferentials(hit,hitVelocity,hitDpX,hitDpY);
+        vec4 matter = disc(hit,velocity,layer,rayDifferentials);
         float weight = stratum==1?.50:.25;
         float alpha = 1.0-pow(1.0-matter.a,weight);
         vec3 emitted = transmission*matter.rgb*alpha;
@@ -500,16 +611,12 @@ void main() {
                       origin,forward,right,up)*nearTransmission-farColor;
   }
   float upperArch = smoothstep(.03,.13,uv.y)*(1.0-smoothstep(.36,.51,abs(uv.x)));
-  float archExposure = .31+.83*exp(-pow((screenRadius-.267)/.045,2.0));
+  float archExposure = .35+1.30*exp(-pow((screenRadius-.273)/.024,2.0));
   color *= mix(1.0,archExposure,upperArch);
   float frontBand = exp(-pow((uv.y+.028)/.025,2.0))
                   *(1.0-smoothstep(.45,.68,abs(uv.x)));
   color *= 1.0+.18*frontBand;
-  color *= vec3(1.04,1.0,.93);
-  if (!captured) {
-    float skyBending = 1.0-smoothstep(2.7,4.6,sqrt(h2));
-    color += transmission*background(normalize(mix(initialDirection,velocity,skyBending)));
-  }
+  color *= vec3(1.015,1.0,.985);
   color += scatteredGas(uv);
   color += discAtmosphere(uv);
   // Warm, optically thin light joins the rear filaments to the foreground.
@@ -518,14 +625,24 @@ void main() {
                  *smoothstep(.193,.220,abs(uv.x))
                  *(1.0-smoothstep(.28,.41,abs(uv.x)))
                  *smoothstep(.197,.211,screenRadius);
-  float rootDensity = .68+.32*noise(vec2(uv.x*17.0-time*.018,uv.y*93.0));
-  color += vec3(1.0,.91,.78)*rootGlow*rootDensity*.28;
+  float rootDensity = .28+.72*noise(vec2(uv.x*17.0-time*.06,uv.y*93.0));
+  color += vec3(1.0,.95,.86)*rootGlow*rootDensity*.24;
   // Forward scattering from the near disc fades into the bottom of the
   // shadow, rather than cutting the bright disc against an absolute black.
   float frontGlow = exp(-pow((uv.y+.022)/.034,2.0))
                   *exp(-pow(abs(uv.x)/.23,4.0));
-  float frontDensity = .72+.28*fbm(vec2(uv.x*23.0-time*.035,uv.y*91.0));
-  color += vec3(1.0,.87,.71)*frontGlow*frontDensity*.20;
+  float frontDensity = .24+.76*fbm(vec2(uv.x*23.0-time*.09,uv.y*91.0));
+  color += vec3(1.0,.94,.83)*frontGlow*frontDensity*.16;
+  color *= photosphere;
+  // Compress only dense gas radiance above the resolved midtones. The smooth
+  // shoulder keeps neighbouring hot fibres distinguishable at bright orbital
+  // phases; sky light and the photon edge are added after this exposure step.
+  float gasLuminance = dot(color,vec3(.2126,.7152,.0722));
+  color /= 1.0+.16*max(gasLuminance-2.0,0.0);
+  if (!captured) {
+    float skyBending = 1.0-smoothstep(2.7,4.6,sqrt(h2));
+    color += transmission*background(normalize(mix(initialDirection,velocity,skyBending)));
+  }
   // Scattered light around the thin hot photon image. Its shape and location
   // are determined by the ray trace above rather than a drawn circular band.
   float impact = sqrt(h2);

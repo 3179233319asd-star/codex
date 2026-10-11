@@ -47,6 +47,6 @@ npm run preview -- --host 0.0.0.0 --port 4173
 
 中文回退字体和图标通过 npm 安装并随构建打包，运行时无需外部字体服务。画面是对参考图的程序化视觉还原，光学模型作了简化，适合视觉展示。
 
-黑洞按参考图保留吸积盘的倾角：主亮带略低于圆心，前景尘埃遮住下半环的上缘，上下影像通过独立光路形成。两侧后方气体沿内凹曲线展开，前景盘保留自己的透视和遮挡。三层独立纹理、差速旋转、断续长丝和局部暖散射共同产生气体流动；光线微分按实际投影过滤过细的纹理，避免倾斜盘面出现点阵和织纹。较克制的辉光保留亮度层次。Canvas 回退保留同样的透视关系，以更简单的光丝提供兼容效果。
+黑洞按参考图保留吸积盘的倾角：主亮带略低于圆心，前景尘埃遮住下半环的上缘，上下影像通过独立光路形成。两侧后方气体沿内凹曲线展开，前景盘保留自己的透视和遮挡。差速旋转的连续气体密度、断续薄丝、相关尘埃吸收和三个薄光学深度层共同形成明暗；最热区域降低连续体发光，让明亮的细流之间保留暗缝。径向和角向光线微分用于过滤旋转气体，稀薄外层气体用独立投影密度作近似。仅对气体的高动态范围辐射作高光压缩，再加入星空和光子边缘；后期辉光按剩余亮度空间叠加，减少流动高光连成大片纯白的情况。Canvas 回退保留相同透视，以更简单的光丝提供兼容效果。
 
-最新首页截图见 `test-results/blackhole-latest-desktop.png` 与 `test-results/blackhole-latest-mobile.png`，前后对照见 `test-results/blackhole-latest-before-after.jpg`，交接局部与参考图对照见 `test-results/blackhole-latest-junctions.jpg`。这些截图仅是开发验证产物，不参与网站渲染；参考图的单根光丝和随机尘埃图案不会逐像素复制。渲染检查运行 `node tests/render-smoke.mjs`，结果写入 `test-results/render-report.json`。
+最新首页截图见 `test-results/blackhole-latest-desktop.png` 与 `test-results/blackhole-latest-mobile.png`，前后对照见 `test-results/blackhole-latest-before-after.jpg`，交接局部与参考图对照见 `test-results/blackhole-latest-junctions.jpg`。这些截图仅是开发验证产物，不参与网站渲染；参考图的单根光丝和随机尘埃图案不会逐像素复制。渲染检查运行 `node tests/render-smoke.mjs`，结果写入 `test-results/render-report.json`。另可运行 `node tests/render-time-slices.mjs`，在测试浏览器中覆盖着色器时间，比较 0 / 0.8 / 3 / 8 / 30 秒的真实 WebGL 帧，并检查固定上光带区域的连续高亮段宽度，防止宽饱和光带回归。该局部回归检查不能代替完整视觉 QA，也与连续动画时钟验证分开；结果写入 `test-results/blackhole-cinematic-motion.json`。

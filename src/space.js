@@ -39,8 +39,9 @@ void main() {
             +texture(scene,uv+vec2(0,pixel.y)).rgb+texture(scene,uv-vec2(0,pixel.y)).rgb)*.25;
   col=mix(col,soft,.08);
   vec3 glow=texture(bloom,uv).rgb;
-  // Optical scattering warms the highlights while preserving the black core.
-  col+=glow*vec3(1.0,.985,.95)*(.30+.16*(1.0-col));
+  // Bound scattered light by the remaining exposure range. Additive bloom
+  // flattened neighbouring hot streams to pure white as the gas rotated.
+  col+=(1.0-col)*(1.0-exp(-glow*vec3(1.0,.985,.95)*.65));
   outColor=vec4(min(col,vec3(1)),1);
 }`;
 
