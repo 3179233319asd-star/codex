@@ -95,10 +95,10 @@ function createCanvasFallback(canvas) {
     phase: random()*Math.PI*2, rate: .2+random()*.6,
     warm: random()>.78,
   }));
-  const strands = Array.from({ length: 56 }, (_, index) => ({
-    radius: .210 + index*.00216,
-    alpha: .012+random()*.034,
-    width: .55+random()*.8,
+  const strands = Array.from({ length: 195 }, (_, index) => ({
+    radius: .218 + index*.00092,
+    alpha: .04+random()*.19,
+    width: .25+random()*.62,
     phase: random()*6.283,
   }));
   return {
@@ -110,7 +110,7 @@ function createCanvasFallback(canvas) {
       ctx.fillRect(0,0,width,height);
       const scale = height;
       const cx = width*.5-pointer.x*scale*.009;
-      const cy = height*.5+pointer.y*scale*.006;
+      const cy = height*.475+pointer.y*scale*.006;
       for (const star of stars) {
         const alpha = star.alpha*(.78+.22*Math.sin(time*star.rate+star.phase))*intensity;
         ctx.fillStyle = `rgba(${star.warm?'255,216,180':'193,215,242'},${alpha})`;
@@ -120,101 +120,41 @@ function createCanvasFallback(canvas) {
       }
       ctx.save();
       ctx.translate(cx,cy);
-      const extent = Math.max(width*.74,scale*1.22);
-      // A continuous, translucent body supplies the gas volume. The sparse
-      // filaments below add motion without building up hard brush-like rings.
-      const glow = ctx.createRadialGradient(0,0,scale*.181,0,0,scale*.39);
+      const glow = ctx.createRadialGradient(0,0,scale*.205,0,0,scale*.40);
       glow.addColorStop(0,'rgba(222,219,213,0)');
-      glow.addColorStop(.15,`rgba(248,238,222,${.06*intensity})`);
-      glow.addColorStop(.29,`rgba(238,234,228,${.19*intensity})`);
-      glow.addColorStop(.49,`rgba(167,185,207,${.10*intensity})`);
-      glow.addColorStop(.75,`rgba(90,111,139,${.035*intensity})`);
+      glow.addColorStop(.3,`rgba(222,219,213,${.13*intensity})`);
       glow.addColorStop(1,'rgba(90,111,139,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(-scale*.45,-scale*.45,scale*.9,scale*.9);
-
-      function heightAt(x, radius) {
-        const distance = Math.abs(x), join = radius*.65, end = radius*1.60;
-        if (distance<=join) return Math.sqrt(radius*radius-distance*distance);
-        const tail = radius*.025;
-        if (distance>=end) return tail*Math.exp(-Math.pow((distance-end)/(extent*.72),2));
-        // Match the circle's tangent, then turn inward into a flat disc.
-        // The Hermite tail has no corner where the two structures meet.
-        const t = (distance-join)/(end-join);
-        const start = Math.sqrt(radius*radius-join*join);
-        const tangent = -join/start*(end-join);
-        return (2*t*t*t-3*t*t+1)*start+(t*t*t-2*t*t+t)*tangent+(-2*t*t*t+3*t*t)*tail;
-      }
-      function appendFlow(radius, side, reverse = false, begin = false) {
-        for (let j=0;j<=180;j++) {
-          const x = ((reverse?180-j:j)/180*2-1)*extent;
-          const y = side*heightAt(x,radius);
-          if (j===0 && begin) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-        }
-      }
-      const atmosphere = ctx.createLinearGradient(0,-scale*.35,0,scale*.35);
-      atmosphere.addColorStop(0,'rgba(132,157,185,0)');
-      atmosphere.addColorStop(.27,`rgba(171,191,215,${.08*intensity})`);
-      atmosphere.addColorStop(.46,`rgba(234,227,214,${.17*intensity})`);
-      atmosphere.addColorStop(.5,`rgba(251,239,221,${.20*intensity})`);
-      atmosphere.addColorStop(.54,`rgba(234,227,214,${.17*intensity})`);
-      atmosphere.addColorStop(.73,`rgba(171,191,215,${.08*intensity})`);
-      atmosphere.addColorStop(1,'rgba(132,157,185,0)');
-      ctx.fillStyle = atmosphere;
-      for (const side of [-1,1]) {
-        ctx.beginPath();
-        appendFlow(scale*.337,side,false,true);
-        appendFlow(scale*.209,side,true);
-        ctx.closePath(); ctx.fill();
-      }
-      const filamentLight = ctx.createLinearGradient(-extent,0,extent,0);
-      filamentLight.addColorStop(0,'rgba(158,181,207,0)');
-      filamentLight.addColorStop(.22,'rgba(170,191,214,.34)');
-      filamentLight.addColorStop(.40,'rgba(235,228,217,.82)');
-      filamentLight.addColorStop(.5,'rgba(253,239,218,1)');
-      filamentLight.addColorStop(.60,'rgba(235,228,217,.82)');
-      filamentLight.addColorStop(.78,'rgba(170,191,214,.34)');
-      filamentLight.addColorStop(1,'rgba(158,181,207,0)');
-      ctx.strokeStyle = filamentLight;
-      ctx.lineCap = 'round';
       for (const strand of strands) {
-        const breathing = Math.sin(strand.phase+time*.11)*.00055;
-        const radius = (strand.radius+breathing)*scale;
-        ctx.globalAlpha = strand.alpha*intensity;
-        ctx.lineWidth = strand.width*scale/720;
-        for (const side of [-1,1]) {
-          ctx.beginPath();
-          appendFlow(radius,side,false,true);
-          ctx.stroke();
+        ctx.beginPath();
+        for (let j=0;j<=160;j++) {
+          const a = j/160*Math.PI*2;
+          const wave = Math.sin(a*13+strand.phase+time*.12)*.0018;
+          const r = (strand.radius+wave)*scale;
+          const x = Math.cos(a)*r, y = Math.sin(a)*r;
+          if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
         }
+        ctx.strokeStyle = `rgba(222,219,214,${strand.alpha*intensity})`;
+        ctx.lineWidth = strand.width*scale/720;
+        ctx.stroke();
       }
-      ctx.globalAlpha = 1;
       ctx.fillStyle = '#010202';
       ctx.beginPath(); ctx.arc(0,0,scale*.191,0,Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(0,0,scale*.194,0,Math.PI*2);
       ctx.strokeStyle = `rgba(255,238,215,${Math.min(intensity*.9,1)})`;
       ctx.lineWidth = scale*.0013; ctx.stroke();
-
-      // Both disc faces share the ring's horizontal axis. A broad, faint
-      // elliptical glow underlies the thin orbital streaks and fades outward.
-      ctx.save();
-      ctx.scale(extent,scale*.035);
-      const discGlow = ctx.createRadialGradient(0,0,0,0,0,1);
-      discGlow.addColorStop(0,`rgba(255,244,224,${.40*intensity})`);
-      discGlow.addColorStop(.25,`rgba(246,239,226,${.29*intensity})`);
-      discGlow.addColorStop(.53,`rgba(185,205,224,${.13*intensity})`);
-      discGlow.addColorStop(1,'rgba(115,140,167,0)');
-      ctx.fillStyle = discGlow;
-      ctx.beginPath(); ctx.arc(0,0,1,0,Math.PI*2); ctx.fill();
-      ctx.restore();
-      for (let i=0;i<90;i++) {
-        const radius = (scale*.225+i*extent*.0095);
-        const flow = .78+.22*Math.sin(time*.09+i*.59);
-        const alpha = (.037+.025*Math.sin(i*.79)**2)*Math.exp(-i*.019)*flow*intensity;
+      // The foreground disc sits below the shadow's centre: its nearer face
+      // overlaps the lower ring instead of creating a mirrored horizontal seam.
+      for (let i=0;i<260;i++) {
+        const radius = .26+i*.0055;
+        const angle = time*.018+i*.81;
+        const wobble = Math.sin(angle)*.001;
         ctx.beginPath();
-        ctx.ellipse(0,0,radius,scale*(.0035+i*.00036),0,0,Math.PI*2);
-        ctx.strokeStyle = `rgba(${i<24?'255,239,218':'168,191,215'},${alpha})`;
-        ctx.lineWidth = (.68+.20*Math.sin(i*.47))*scale/720;
+        ctx.ellipse(0,scale*.026+Math.sin(i*.74+time*.08)*scale*.001,radius*scale,radius*scale*.092,0,0,Math.PI*2);
+        const alpha = (.04+.15*Math.pow(Math.sin(i*1.7+angle*.2),8))*Math.exp(-i*.009)*intensity;
+        ctx.strokeStyle = `rgba(${i<38?'255,239,218':'175,194,219'},${alpha})`;
+        ctx.lineWidth = (.35+wobble*100)*scale/720;
         ctx.stroke();
       }
       ctx.restore();

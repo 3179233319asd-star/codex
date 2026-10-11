@@ -1,44 +1,45 @@
-# Black-hole shape and gas QA
+# Reference black-hole QA
 
-Date: 2026-10-11. The user requested thin concave junctions, longer left/right wings, symmetric upper/lower structure and better gas, retaining pure-code animation and the one-screen personal homepage.
+Date: 2026-10-11. The latest user direction restores the original reference, replacing the earlier request for upper/lower symmetry. The scene must remain code-generated and animated, with the accepted personal-site UI occupying one screen.
 
 ## Evidence and comparison state
 
-- Source: `docs/reference.jpg`, 1280 × 720. The user's explicit symmetry request overrides its naturally asymmetric upper/lower image.
-- Before: `test-results/blackhole-refined-desktop-scene.png`.
-- Final WebGL candidate: `test-results/blackhole-latest-desktop.png`, `blackhole-latest-mobile.png`, `blackhole-latest-landscape.png` and corresponding `*-scene.png` files; these alias symmetric-gas v4.
-- Combined full reference/final comparison: `test-results/blackhole-latest-reference-comparison.jpg`; before/final: `blackhole-latest-before-after.jpg`.
-- Combined focused reference/before/final crops: `test-results/blackhole-latest-junctions.jpg`. Both junctions use identical 260 × 170 crop coordinates in each image, equally enlarged to 520 × 340.
-- Capture metadata: `test-results/blackhole-latest-capture.json`.
+Source: `docs/reference.jpg`, 1280 × 720. Final candidate: reference v17. The rejected symmetric result is archived in `docs/symmetry-experiment-qa.md` and immutable `test-results/blackhole-symmetric-gas-v4-*` captures.
 
-Chromium opened `http://terminal.local:4173/` with real WebGL 2. CSS viewports and image pixels are 1280 × 720, 390 × 844 and 844 × 390, DPR 1. Reduced motion freezes time at 0 and quality at 1 for comparison; animation is tested separately. All three captures have exactly one-screen document dimensions and no console, page or resource errors. The full pair, focused pairs and desktop/phone/landscape captures were opened before this report. The phone intentionally crops the same centred scene horizontally.
+- Final actual WebGL screenshots: `test-results/blackhole-latest-desktop.png`, `blackhole-latest-mobile.png`, `blackhole-latest-landscape.png` and corresponding `*-scene.png` files.
+- Full source/current pair: `blackhole-latest-reference-comparison.jpg`.
+- Rejected symmetry/current pair: `blackhole-latest-before-after.jpg`.
+- Focused source/current junctions: `blackhole-latest-junctions.jpg`. Identical 260 × 170 source crops at `(300,215)` and `(720,215)` are enlarged equally to 520 × 340.
+- Phone source/current pair: `blackhole-latest-mobile-comparison.jpg`. The source is scaled to the same 844-pixel height and cropped centrally to 390 pixels, matching the scene's height-based projection.
+- Immutable final captures and metadata: `blackhole-reference-v17-*`; current metadata alias: `blackhole-latest-capture.json`.
 
-## Findings and iteration history
+Chromium opened `http://terminal.local:4173/` using real WebGL 2 with SwiftShader. Viewports and screenshot pixels are 1280 × 720, 390 × 844 and 844 × 390, DPR 1. Reduced motion freezes time at 0 with quality 1 for visual comparison. Animation is tested separately. Each viewport has exact one-screen document dimensions, with zero console, page or resource errors.
 
-- P2, fixed: broad bright roots at both junctions. Junction v1 reduced projection spread and scattered gas; v2 narrowed exposure and lengthened the disc; v3 shifted the hot band inward. Bright column-like roots remained. The final concave mapping smoothly turns the outer arch into the plane while an independent critical-impact silhouette preserves the circular rim.
-- P2, fixed: upper and lower gas used different projection radii, widths and masking. Final geometry shares the viewport midline and envelope, with slightly different turbulent phases. The photon peaks are at y = 223 and 496, both 136.5 pixels from the y = 359.5 pixel-centre axis (`blackhole-latest-symmetry.json`). The background sky keeps an independent spatial distribution.
-- P2, fixed: strongly fragmented high-frequency gas resembled brush strokes and white clumps. Correlated strata, continuous low/mid-frequency density, reduced opacity and fewer narrow ridges provide connected light and soft depths. The radial tail extends to 22 world units and gradually fades, carrying both wings to the desktop/landscape edges.
-- P2, fixed: symmetric-gas v1 was too smooth and uniformly bright. v2 restored medium-scale density changes. v3's strong veil created dark wedge segments. Final v4 blends the veil at 38%, moderates angular frequency and retains a few fine strands. The broken wedges are absent, and faint fog maintains the continuous body.
-- P2, fixed: constant central glow formed an overly uniform stripe. The stream now has gradually varying density and width, with energy tapering into the wings.
+## Findings
 
-Independent review of the final full view, focused crops, phone and landscape found no remaining P1/P2 under the user's latest requirements. Residual P3: hot trajectories are more concentric and softer than the reference's intricate intertwined filaments; the central stream is still very straight. Neither exact photographic reproduction nor physical accuracy is claimed. The symmetric envelope is an intentional art direction choice requested by the user.
+- P1, fixed: screen-centred mirrored gas replaced the reference's tilted disc and foreground occlusion. Signed, independently traced rays now restore the raised circle centre, slightly lower main bright band and dark near-disc layer crossing the lower image. The underside is not a reflected copy of the upper arch.
+- P2, fixed: thick roots and folded projection created abrupt joins, double plates and dark triangular gaps. A monotonic concave mapping opens only the rear material; the front disc and photon silhouette retain their original projection. Both junctions turn continuously into the plane without large black wedges.
+- P2, fixed: fine material became a dense point grid or woven pattern in the grazing projection. Position and velocity differentials travel through the same curved rays. Their radial footprint filters unresolved noise and orbital streams while retaining resolved, independently lit filaments. This replaces a fixed texture-footprint estimate that either retained aliasing or washed the disc into a uniform milky sheet.
+- P2, fixed: cold coarse brush marks dominated the gas. Separate optical-depth strata, interrupted orbital streams, sparse hot arcs and faint warm scattering give soft depth with identifiable fine flows and dark gaps. Independent review of the full pair, focused junctions, phone comparison and landscape found no remaining P1/P2 visual blockers. The phone also avoids thick white roots, dominant woven grids and uniform textureless gas sheets.
+
+Remaining P3: the main hot band is softer and more uniform than the reference, gas is somewhat warmer, and individual lower-ring flows differ. The reference has more intricate cold-silver strands and dark layers. These are visible fine-detail differences; exact photographic or pixel-identical reproduction is not claimed. The reference raster is used only for QA and is not imported by the running site.
 
 ## Required visual surfaces
 
-1. Fonts and typography: the accepted native rounded/system font and local Noto Sans SC remain readable; weights, wrapping and hierarchy match the prior interface.
-2. Spacing and layout: all captures retain one screen, centred gas and accessible navigation/bottom controls. Shadow, rim and disc share a horizontal axis, and both concave joins remain continuous.
-3. Colors and tokens: silver/ivory hot gas, subordinate cool haze and dark sky remain consistent. Reduced radiation and opacity preserve layered brightness; the core stays dark.
-4. Image quality: real-time WebGL supplies the main scene without images, video or texture assets. Continuous gas, longer tails and independent turbulence meet the latest direction. Canvas fallback uses matching symmetry/joins with deliberately simpler visual detail.
-5. Copy and content: the same brief Chinese personal-site copy, real personal links and dialog content remain in place, with no new sections or decorative labels.
+1. Fonts and typography: the accepted native rounded/system typography and local Noto Sans SC remain readable. Existing heading sizes, weights, wrapping and controls are retained.
+2. Spacing and layout: the same header, welcome copy and bottom capsule remain within one screen on desktop, phone and landscape. The phone crops the scene horizontally while preserving its height-based proportions.
+3. Colors and tokens: ivory/silver emission, subordinate cool haze and almost-black sky remain consistent with the existing interface. The shadow remains dark and the lower foreground veil remains visible.
+4. Image quality: real WebGL supplies curved rays, optical-depth disc crossings, drifting gas, procedural stars and galaxies without photos, videos or image textures. The Canvas fallback preserves the inclined structure with simpler curved filaments; its visual detail is deliberately lower than WebGL.
+5. Copy and content: the same concise Chinese welcome, personal navigation and reading dialogs remain in place. No extra home sections or decorative labels were added.
 
 ## Verification
 
-- `npm run build` passed on the final shader and Canvas renderer.
-- Real WebGL captures passed at all three sizes, with zero errors and exact one-screen dimensions.
-- `node tests/render-smoke.mjs` passed all 9 checks: shader compilation/visible pixels, time/pixel changes, no GL errors, frozen pause, actual UI speed/light controls, light restoration, reset, immersive access and exact phone bounds. Dimming to 0.7 changed the frame, and restoring 1 returned its original hash (-889429544). Results: `test-results/render-report.json`; live screenshots: `blackhole-live-desktop.png`, `blackhole-live-immersive.png`, `blackhole-live-mobile.png`.
-- Canvas fallback browser checks passed 11/11: changing time/pixels, pause freezes the frame, brightness restoration returns the same hash, desktop/phone bounds and no browser/resource errors. Evidence: `fallback-gas-report.json`, `fallback-gas-desktop.png`, `fallback-gas-mobile.png`.
-- Earlier wider dialog/keyboard checks remain historical evidence in `docs/material-refinement-qa.md` and `docs/one-screen-ui-qa.md`, rather than being counted as rerun here.
+- `npm run build` passed on the final v17 shader.
+- Final WebGL static captures passed at all three sizes, with zero errors and exact one-screen bounds.
+- Final `node tests/render-smoke.mjs` passed all 9 checks: visible WebGL pixels and no GL errors, time/pixel changes, frozen pause, actual UI speed/light controls and labels, identical brightness restoration, reset/resume, immersive view and exact mobile bounds. At frozen time, intensity 0.7 changed the frame hash; restoring 1 returned the original hash `1179149446`. Results: `test-results/render-report.json` and immutable `blackhole-reference-v17-render-report.json`; live evidence: `blackhole-live-desktop.png`, `blackhole-live-immersive.png`, `blackhole-live-mobile.png`.
+- Unchanged final Canvas fallback passed 16 browser checks across desktop and phone: visible pixels, animation, frozen pause, speed/light controls and labels, identical restored brightness, default reset/resume, immersive mode/Escape and exact one-screen bounds. Results: `test-results/reference-fallback-report.json`; screenshots: `reference-fallback-desktop.png`, `reference-fallback-mobile.png` and their scene captures.
+- Earlier dialog/keyboard checks remain historical evidence in `docs/one-screen-ui-qa.md` and `docs/material-refinement-qa.md`, rather than being counted as rerun here.
 
-No dependencies or ray-integration steps were added. The preview remains on port 4173; no publication was requested. Hardware frame rates have not been measured.
+Each traced path uses at most 180 integration steps. The local rear-disc shoulder region traces an additional path, and differential transport adds arithmetic and register use; hardware frame rates have not been measured. The projection model, crossing derivatives and caustic footprint cap are approximations for visual rendering.
 
 final result: passed

@@ -47,6 +47,6 @@ npm run preview -- --host 0.0.0.0 --port 4173
 
 中文回退字体和图标通过 npm 安装并随构建打包，运行时无需外部字体服务。画面是对参考图的程序化视觉还原，光学模型作了简化，适合视觉展示。
 
-黑洞使用光线积分、相关的多层气体密度和少量长丝纹理。上下光环围绕横盘中轴对称，气体采用不同的流动相位；两侧通过内凹曲线接入加长、渐弱的吸积盘。低中频密度和轻度光学深度变化提供连续的半透明明暗，较克制的辉光保留层次。星空保持独立的空间分布。Canvas 回退也采用同轴对称、内凹连接与连续雾底。
+黑洞按参考图保留吸积盘的倾角：主亮带略低于圆心，前景尘埃遮住下半环的上缘，上下影像通过独立光路形成。两侧后方气体沿内凹曲线展开，前景盘保留自己的透视和遮挡。三层独立纹理、差速旋转、断续长丝和局部暖散射共同产生气体流动；光线微分按实际投影过滤过细的纹理，避免倾斜盘面出现点阵和织纹。较克制的辉光保留亮度层次。Canvas 回退保留同样的透视关系，以更简单的光丝提供兼容效果。
 
 最新首页截图见 `test-results/blackhole-latest-desktop.png` 与 `test-results/blackhole-latest-mobile.png`，前后对照见 `test-results/blackhole-latest-before-after.jpg`，交接局部与参考图对照见 `test-results/blackhole-latest-junctions.jpg`。这些截图仅是开发验证产物，不参与网站渲染；参考图的单根光丝和随机尘埃图案不会逐像素复制。渲染检查运行 `node tests/render-smoke.mjs`，结果写入 `test-results/render-report.json`。
